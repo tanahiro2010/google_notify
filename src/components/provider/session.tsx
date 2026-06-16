@@ -12,7 +12,8 @@ const SessionProvider = () => {
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
 
   useEffect(() => {
-    alert("start loading");
+    useEffect(() => {
+     const token = localStorage.getItem("access_token");
     const token = localStorage.getItem("access_token");
     if (!token) {
       setIsLoggedIn(false);
