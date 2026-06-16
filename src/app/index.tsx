@@ -4,9 +4,11 @@ const IndexPage = () => {
   const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
-    setInterval(() => {
+    const timer = setInterval(() => {
       setProfile(sessionStorage.getItem("profile"));  
     }, 1000);
+
+    return () => clearInterval(timer);
   }, []);
 
   return (
