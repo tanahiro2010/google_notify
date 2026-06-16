@@ -26,6 +26,14 @@ fn compute_code_challenge(verifier: &str) -> String {
     general_purpose::URL_SAFE_NO_PAD.encode(&hash)
 }
 
+struct OauthServerGuard(u16);
+
+impl Drop for OauthServerGuard {
+    fn drop(&mut self) {
+        let _ = tauri_plugin_oauth::cancel(self.0);
+    }
+}
+
 pub(crate) async fn login() -> Result<String, String> {
     let client_id =
         std::env::var("GOOGLE_CLIENT_ID").map_err(|_| "GOOGLE_CLIENT_ID not set".to_string())?;
@@ -51,6 +59,8 @@ pub(crate) async fn login() -> Result<String, String> {
         let _ = tx.send(url);
     })
     .map_err(|e| format!("Failed to start OAuth server: {e}. Try registering one of these redirect URIs in Google Cloud Console:\n  http://127.0.0.1:54321/callback\n  http://127.0.0.1:54322/callback\n  http://127.0.0.1:54323/callback"))?;
+
+    let _guard = OauthServerGuard(port);
 
     let redirect_uri = format!("http://127.0.0.1:{port}/callback");
     let auth_url = format!(
@@ -82,8 +92,6 @@ pub(crate) async fn login() -> Result<String, String> {
              http://127.0.0.1:54321/callback".to_string()
         })?
         .ok_or("OAuth channel closed unexpectedly".to_string())?;
-
-    let _ = tauri_plugin_oauth::cancel(port);
 
     println!("[oauth] Callback received");
 
