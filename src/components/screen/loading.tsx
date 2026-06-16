@@ -6,11 +6,12 @@ type Member = {
   href: string;
 }
 const members: Array<Member> = [
-  { name: "tanahiro2010", href: "https://tanahiro2010.com" }
-]
+  { name: "tanahiro2010", href: "https://tanahiro2010.com" },
+  { name: "田中博悠", href: "https://tanahiro2010.com" },
+];
 
 const Loading = () => {
-  const [member, setMember] = useState<Member>(() => members[Math.floor(Math.random() * members.length)]);
+  const [member, _setMember] = useState<Member>(() => members[Math.floor(Math.random() * members.length)]);
 
   return (
     <main className="loading">
