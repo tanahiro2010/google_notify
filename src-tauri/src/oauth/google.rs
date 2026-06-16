@@ -112,7 +112,11 @@ pub(crate) async fn login() -> Result<String, String> {
 
     println!("[oauth] Exchanging code for token...");
 
-    let http = reqwest::Client::new();
+    let http = reqwest::Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .map_err(|e| format!("Failed to build HTTP client: {e}"))?;
+
     let mut params = vec![
         ("code", code.as_str()),
         ("client_id", client_id.as_str()),
