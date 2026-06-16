@@ -38,6 +38,13 @@ pub(crate) async fn login() -> Result<String, String> {
     let client_id =
         std::env::var("GOOGLE_CLIENT_ID").map_err(|_| "GOOGLE_CLIENT_ID not set".to_string())?;
     let client_secret = std::env::var("GOOGLE_CLIENT_SECRET").ok();
+    let scopes = vec![
+        "openid", 
+        "email", 
+        "profile", 
+        "https://www.googleapis.com/auth/classroom.courses",
+        "https://www.googleapis.com/auth/chat.messages"
+    ];
 
     let state: String = rand::rng()
         .sample_iter(&Alphanumeric)
@@ -63,12 +70,13 @@ pub(crate) async fn login() -> Result<String, String> {
     let _guard = OauthServerGuard(port);
 
     let redirect_uri = format!("http://127.0.0.1:{port}/callback");
+    let scopes_str = scopes.join("%20");
     let auth_url = format!(
         "https://accounts.google.com/o/oauth2/v2/auth?\
          client_id={client_id}&\
          redirect_uri={redirect_uri}&\
          response_type=code&\
-         scope=openid%20email%20profile&\
+         scope={scopes_str}&\
          state={state}&\
          code_challenge={code_challenge}&\
          code_challenge_method=S256&\
