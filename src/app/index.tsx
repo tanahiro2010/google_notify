@@ -13,7 +13,7 @@ const IndexPage = () => {
     <div>
       <h2>hello</h2>
       <div>{JSON.stringify(profile)}</div>
-      <div>{JSON.stringify(localStorage.getItem("session"))}</div>
+      <div>{JSON.stringify(localStorage.getItem("access_token"))}</div>
     </div>
   )
 };
