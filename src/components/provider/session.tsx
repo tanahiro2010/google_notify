@@ -12,8 +12,6 @@ const SessionProvider = () => {
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
 
   useEffect(() => {
-    useEffect(() => {
-     const token = localStorage.getItem("access_token");
     const token = localStorage.getItem("access_token");
     if (!token) {
       setIsLoggedIn(false);
@@ -49,6 +47,7 @@ const SessionProvider = () => {
       setIsLoggedIn(true);
     } catch (e) {
       console.error("Login failed:", e);
+      alert(`ログインに失敗しました\n${e}`);
     } finally {
       setIsLoggingIn(false);
     }
