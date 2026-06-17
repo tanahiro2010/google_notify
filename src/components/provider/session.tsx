@@ -8,42 +8,34 @@ import styles from "../../styles/session.module.css";
 
 const SessionProvider = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(true);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
+  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
+    const storedToken = localStorage.getItem("access_token");
+    if (storedToken) {
+      setToken(storedToken);
+    } else {
       setIsLoggedIn(false);
-      setIsLoading(false);
-      return;
     }
-
-    useProfile(token)
-      .then((profile) => {
-        sessionStorage.setItem("profile", JSON.stringify(profile));
-        setIsLoading(false);
-      })
-      .catch((e) => {
-        console.error(e);
-        setIsLoggedIn(false);
-        setIsLoading(false);
-      });
+    setIsLoading(false);
   }, []);
+
+  const { isLoading: isProfileLoading, profile } = useProfile(token ?? "");
+
+  useEffect(() => {
+    if (profile) {
+      sessionStorage.setItem("profile", JSON.stringify(profile));
+    }
+  }, [profile]);
 
   const handleButtonClick = async () => {
     setIsLoggingIn(true);
     try {
-      const token = await invoke<string>("login");
-      localStorage.setItem("access_token", token);
-      try {
-        const profile = await useProfile(token);
-        sessionStorage.setItem("profile", JSON.stringify(profile));
-      } catch (e) {
-        console.error(e);
-        alert(`読み込み中にエラーが発生しました。再試行します\n${(e as Error).message}`);
-        window.location.reload();
-      }
+      const newToken = await invoke<string>("login");
+      localStorage.setItem("access_token", newToken);
+      setToken(newToken);
       setIsLoggedIn(true);
     } catch (e) {
       console.error("Login failed:", e);
@@ -53,8 +45,8 @@ const SessionProvider = () => {
     }
   };
 
-  if (isLoading) return <Loading />;
-  if (!isLoading && !isLoggedIn) return (
+  if (isLoading || isProfileLoading) return <Loading />;
+  if (!isLoggedIn) return (
     <Modal
       isOpen={!isLoggedIn}
       style={{ minWidth: 0, maxWidth: 400, width: "90vw" }}
