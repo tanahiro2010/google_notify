@@ -30,23 +30,6 @@
   font-weight: 500;
 }
 
-.sideBySide {
-  margin-top: 1.5rem;
-  display: flex;
-  gap: 2rem;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.sideBySide > .section {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
 .scrollArea {
   flex: 1;
   overflow-y: auto;
@@ -54,7 +37,10 @@
 }
 
 .section {
-  margin-bottom: 2rem;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .section h2 {
@@ -142,40 +128,6 @@
   background: #e8f0fe;
   border-color: #1967d2;
   color: #1967d2;
-}
-
-.chatCard {
-  composes: card;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.spaceName {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #555;
-}
-
-.messageItem {
-  padding-left: 0.5rem;
-  border-left: 2px solid #e0e0e0;
-}
-
-.messageSender {
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: #333;
-}
-
-.messageText {
-  font-size: 0.88rem;
-  margin: 0.1rem 0;
-  color: #444;
-}
-
-.messageTime {
-  font-size: 0.72rem;
-  color: #aaa;
 }
 
 .dueLabel {
