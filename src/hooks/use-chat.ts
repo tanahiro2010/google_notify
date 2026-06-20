@@ -2,19 +2,14 @@ import type { ChatSpace, ChatMessage } from "../types/chat";
 import { useState, useEffect } from 'react';
 import { GoogleAPIClient } from '../lib/google';
 
-const useChat = (filter: string) => {
+const useChat = (token: string, filter: string) => {
   const [chatMessages, setChatMessages] = useState<Array<ChatSpace & { messages: ChatMessage[] }>>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [loading, setLoading] = useState(() => !token);
+  const [error, setError] = useState<Error | null>(
+    () => token ? null : new Error("アクセストークンが見つかりません")
+  );
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      setLoading(false);
-      setError(new Error("アクセストークンが見つかりません"));
-      return;
-    }
-
     const fetchChatMessages = async () => {
       const client = new GoogleAPIClient(token);
       try {
@@ -32,7 +27,7 @@ const useChat = (filter: string) => {
     };
 
     fetchChatMessages();
-  }, [filter]);
+  }, [token, filter]);
 
   return { chatMessages, loading, error } as const;
 }
