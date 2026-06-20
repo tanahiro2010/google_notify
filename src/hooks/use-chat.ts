@@ -2,7 +2,7 @@ import type { ChatSpace } from "../types/chat";
 import { useState, useEffect } from 'react';
 import { GoogleAPIClient } from '../lib/google';
 
-const useChat = () => {
+const useChat = (filter: string) => {
   const [chatMessages, setChatMessages] = useState<ChatSpace[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -20,7 +20,6 @@ const useChat = () => {
       try {
         const spaces = await client.fetchChatSpaces();
         const messages = await Promise.all(spaces.map(async (space) => {
-          const filter = `createTime > "${new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()}"`;
           const chatMessages = await client.fetchChatMessages(space.name, filter);
           return { ...space, messages: chatMessages };
         }));
