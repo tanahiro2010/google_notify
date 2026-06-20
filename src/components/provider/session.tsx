@@ -11,6 +11,8 @@ const storeTokenData = (res: LoginResponse) => {
   localStorage.setItem("access_token", res.access_token);
   if (res.refresh_token) {
     localStorage.setItem("refresh_token", res.refresh_token);
+  } else {
+    localStorage.removeItem("refresh_token");
   }
   localStorage.setItem("expires_at", String(Date.now() + res.expires_in * 1000));
 };
@@ -37,6 +39,8 @@ const SessionProvider = () => {
   useEffect(() => {
     if (profile) {
       sessionStorage.setItem("profile", JSON.stringify(profile));
+    } else {
+      sessionStorage.removeItem("profile");
     }
   }, [profile]);
 
