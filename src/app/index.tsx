@@ -14,7 +14,7 @@ const developers = [
 ];
 
 const IndexPage = () => {
-  const token = useMemo(() => localStorage.getItem("access_token"), [localStorage]);
+  const token = localStorage.getItem("access_token");
   const classroomResult = useClassroom(token);
   const latestView = TEST_MODE ? null : localStorage.getItem("latest_view");
   const since = latestView && !isNaN(new Date(latestView).getTime())
@@ -32,7 +32,16 @@ const IndexPage = () => {
         (work) => new Date(work.updateTime) > new Date(since)
       );
   }, [classroomResult.classroomWorks, classroomResult.loading, since]);
-
+  const profile = useMemo(() => {
+    try {
+      const profileRaw = sessionStorage.getItem("profile");
+      if (!profileRaw) return null;
+      return JSON.parse(profileRaw);
+    } catch {
+      return null;
+    }
+  }, []);
+  const userName = typeof profile?.name === "string" ? profile.name : null;
   if (classroomResult.loading) return <Loading isFullscreen={false} />;
   if (classroomResult.error) {
     return (
@@ -47,17 +56,6 @@ const IndexPage = () => {
       </div>
     );
   }
-
-  const profile = useMemo(() => {
-    try {
-      const profileRaw = sessionStorage.getItem("profile");
-      if (!profileRaw) return null;
-      return JSON.parse(profileRaw);
-    } catch {
-      return null;
-    }
-  }, [sessionStorage]);
-  const userName = typeof profile?.name === "string" ? profile.name : null;
 
   const unreadTotal = unreadItems.length;
 
