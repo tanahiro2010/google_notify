@@ -32,7 +32,7 @@ const useChat = (filter: string) => {
     };
 
     fetchChatMessages();
-  }, []);
+  }, [filter]);
 
   return { chatMessages, loading, error } as const;
 }
