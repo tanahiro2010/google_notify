@@ -7,6 +7,8 @@ import { ChatSpaceSection } from "../components/unread/chat-card";
 import styles from "../styles/index.module.css";
 
 const TEST_MODE = true; // false にすると期間フィルタが有効に
+const INITIAL_DISPLAY_COUNT = 7;
+const LOAD_MORE_COUNT = 10;
 
 const developers = [
   { name: "tanahiro2010", href: "https://tanahiro2010.com" },
@@ -24,6 +26,8 @@ const IndexPage = () => {
   const [developer] = useState(() =>
     developers[Math.floor(Math.random() * developers.length)]
   );
+  const [classroomLimit, setClassroomLimit] = useState(INITIAL_DISPLAY_COUNT);
+  const [chatLimit, setChatLimit] = useState(INITIAL_DISPLAY_COUNT);
 
   const unreadItems = useMemo(() => {
     const classroom = classroomResult.loading ? [] :
@@ -53,27 +57,43 @@ const IndexPage = () => {
         {userName && <div className={styles.welcome}>ようこそ {userName} さん</div>}
       </div>
 
-      <section className={styles.section}>
-        <h2>Classroom ({unreadItems.classroom.length})</h2>
-        {unreadItems.classroom.length === 0 ? (
-          <div className={styles.empty}>未読はありません</div>
-        ) : (
-          unreadItems.classroom.map((work) => (
-            <ClassroomCard key={work.id} work={work} />
-          ))
-        )}
-      </section>
+      <div className={styles.sideBySide}>
+        <section className={styles.section}>
+          <h2>Classroom ({unreadItems.classroom.length})</h2>
+          {unreadItems.classroom.length === 0 ? (
+            <div className={styles.empty}>未読はありません</div>
+          ) : (
+            <>
+              {unreadItems.classroom.slice(0, classroomLimit).map((work) => (
+                <ClassroomCard key={work.id} work={work} />
+              ))}
+              {classroomLimit < unreadItems.classroom.length && (
+                <button className={styles.showMore} onClick={() => setClassroomLimit((p) => p + LOAD_MORE_COUNT)}>
+                  さらに表示
+                </button>
+              )}
+            </>
+          )}
+        </section>
 
-      <section className={styles.section}>
-        <h2>Google Chat ({unreadItems.chat.reduce((acc, s) => acc + s.messages.length, 0)})</h2>
-        {unreadItems.chat.length === 0 ? (
-          <div className={styles.empty}>未読はありません</div>
-        ) : (
-          unreadItems.chat.map((space) => (
-            <ChatSpaceSection key={space.name} space={space} />
-          ))
-        )}
-      </section>
+        <section className={styles.section}>
+          <h2>Google Chat ({unreadItems.chat.reduce((acc, s) => acc + s.messages.length, 0)})</h2>
+          {unreadItems.chat.length === 0 ? (
+            <div className={styles.empty}>未読はありません</div>
+          ) : (
+            <>
+              {unreadItems.chat.slice(0, chatLimit).map((space) => (
+                <ChatSpaceSection key={space.name} space={space} />
+              ))}
+              {chatLimit < unreadItems.chat.length && (
+                <button className={styles.showMore} onClick={() => setChatLimit((p) => p + LOAD_MORE_COUNT)}>
+                  さらに表示
+                </button>
+              )}
+            </>
+          )}
+        </section>
+      </div>
 
       <footer className={styles.footer}>
         Powered by <a href="https://unischool.jp">UniSchool</a> - <a href={developer.href}>{developer.name}</a>
