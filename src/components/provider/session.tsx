@@ -4,7 +4,16 @@ import { SiGoogle } from "react-icons/si";
 import { useProfile } from "../../hooks/use-profile";
 import { Loading } from "../screen/loading";
 import { Modal } from "../ui/modal";
+import type { LoginResponse } from "../../types/auth";
 import styles from "../../styles/session.module.css";
+
+const storeTokenData = (res: LoginResponse) => {
+  localStorage.setItem("access_token", res.access_token);
+  if (res.refresh_token) {
+    localStorage.setItem("refresh_token", res.refresh_token);
+  }
+  localStorage.setItem("expires_at", String(Date.now() + res.expires_in * 1000));
+};
 
 const SessionProvider = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -34,9 +43,9 @@ const SessionProvider = () => {
   const handleButtonClick = async () => {
     setIsLoggingIn(true);
     try {
-      const newToken = await invoke<string>("login");
-      localStorage.setItem("access_token", newToken);
-      setToken(newToken);
+      const res = await invoke<LoginResponse>("login");
+      storeTokenData(res);
+      setToken(res.access_token);
       setIsLoggedIn(true);
     } catch (e) {
       console.error("Login failed:", e);
