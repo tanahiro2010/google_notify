@@ -19,7 +19,11 @@ const useProfile = (token: string) => {
     }).then((data: Record<string, unknown>) => {
       setProfile(data);
       setIsLoading(false);
-    }).catch(console.error);
+    }).catch((e) => {
+      console.error(e);
+      setProfile(null);
+      setIsLoading(false);
+    });
   }, [token]);
 
   return { isLoading, profile } as const;
