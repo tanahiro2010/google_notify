@@ -19,9 +19,12 @@ const useChat = () => {
       const client = new GoogleAPIClient(token);
       try {
         const spaces = await client.fetchChatSpaces();
-        // Here you would typically fetch messages for each space
-        // For now, we'll just set the spaces as the chat messages
-        setChatMessages(spaces);
+        const messages = await Promise.all(spaces.map(async (space) => {
+          const filter = `createTime > "${new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()}"`;
+          const chatMessages = await client.fetchChatMessages(space.name, filter);
+          return { ...space, messages: chatMessages };
+        }));
+        setChatMessages(messages);
       } catch (err) {
         setError(err as Error);
       } finally {
