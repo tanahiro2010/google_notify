@@ -72,7 +72,7 @@ const IndexPage = () => {
     return { classroom, chat };
   }, [classroomResult.classroomWorks, classroomResult.loading, chatResult.chatMessages, chatResult.loading, since]);
 
-  if (classroomResult.loading && chatResult.loading) return <Loading />;
+  if (classroomResult.loading || chatResult.loading) return <Loading isFullscreen={false} />;
 
   const unreadTotal = unreadItems.classroom.length +
     unreadItems.chat.reduce((acc, s) => acc + s.messages.length, 0);
