@@ -1,5 +1,5 @@
 import { type Member, members } from "../../constants/member";
-import { useState } from "react";
+import { useMemo } from "react";
 import { CircularProgress } from "@mui/material";
 
 type LoadingProps = {
@@ -7,7 +7,8 @@ type LoadingProps = {
 }
 
 const Loading = ({ isFullscreen = true }: LoadingProps) => {
-  const [member, _setMember] = useState<Member>(() => members[Math.floor(Math.random() * members.length)]);
+  /* eslint-disable react-hooks/purity */
+  const member = useMemo<Member>(() => members[Math.floor(Math.random() * members.length)], []);
 
   return (
     <main className={`loading ${isFullscreen ? "fullscreen" : "inset"}`}>
