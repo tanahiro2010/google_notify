@@ -2,64 +2,13 @@ import { useMemo } from "react";
 import { useClassroom } from "../hooks/use-classroom";
 import { useChat } from "../hooks/use-chat";
 import { Loading } from "../components/screen/loading";
-import type { ClassroomCourseWork } from "../types/classroom";
-import type { ChatSpace, ChatMessage } from "../types/chat";
+import { ClassroomCard } from "../components/unread/classroom-card";
+import { ChatSpaceSection } from "../components/unread/chat-card";
 import styles from "../styles/index.module.css";
-
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleString("ja-JP", {
-    month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit"
-  });
-
-const dueLabel = (work: ClassroomCourseWork) => {
-  if (!work.dueDate) return null;
-  const d = work.dueDate;
-  const t = work.dueTime;
-  const date = `${d.year}/${d.month}/${d.day}`;
-  const time = t ? ` ${String(t.hours).padStart(2, "0")}:${String(t.minutes).padStart(2, "0")}` : "";
-  return <span className={styles.dueLabel}>期限 {date + time}</span>;
-};
-
-const ClassroomCard = ({ work }: { work: ClassroomCourseWork }) => (
-  <div className={styles.card}>
-    <div className={styles.cardBody}>
-      <p className={styles.cardTitle}>{work.title}</p>
-      <div className={styles.cardMeta}>
-        <span>更新: {formatDate(work.updateTime)}</span>
-        {dueLabel(work)}
-      </div>
-    </div>
-    <a
-      className={styles.cardLink}
-      href={work.alternateLink}
-      target="_blank"
-      rel="noopener noreferrer"
-    >開く</a>
-  </div>
-);
-
-const ChatMessageItem = ({ msg }: { msg: ChatMessage }) => (
-  <div className={styles.messageItem}>
-    {msg.sender?.displayName && (
-      <div className={styles.messageSender}>{msg.sender.displayName}</div>
-    )}
-    <div className={styles.messageText}>{msg.text ?? "(画像など)"}</div>
-    <div className={styles.messageTime}>{formatDate(msg.createTime)}</div>
-  </div>
-);
-
-const ChatSpaceSection = ({ space }: { space: ChatSpace & { messages: ChatMessage[] } }) => (
-  <div className={styles.chatCard}>
-    <div className={styles.spaceName}>{space.displayName ?? space.name}</div>
-    {space.messages.map((msg) => (
-      <ChatMessageItem key={msg.name} msg={msg} />
-    ))}
-  </div>
-);
 
 const IndexPage = () => {
   const classroomResult = useClassroom();
-  const latestView = localStorage.getItem("latest_view");
+  const latestView = null; //localStorage.getItem("latest_view");
   const since = latestView ?? new Date(0).toISOString();
   const chatResult = useChat(`createTime > "${since}"`);
 
