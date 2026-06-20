@@ -64,9 +64,11 @@ const IndexPage = () => {
             <div className={styles.empty}>未読はありません</div>
           ) : (
             <>
-              {unreadItems.classroom.slice(0, classroomLimit).map((work) => (
-                <ClassroomCard key={work.id} work={work} />
-              ))}
+              <div className={styles.scrollArea}>
+                {unreadItems.classroom.slice(0, classroomLimit).map((work) => (
+                  <ClassroomCard key={work.id} work={work} />
+                ))}
+              </div>
               {classroomLimit < unreadItems.classroom.length && (
                 <button className={styles.showMore} onClick={() => setClassroomLimit((p) => p + LOAD_MORE_COUNT)}>
                   さらに表示
@@ -82,9 +84,11 @@ const IndexPage = () => {
             <div className={styles.empty}>未読はありません</div>
           ) : (
             <>
-              {unreadItems.chat.slice(0, chatLimit).map((space) => (
-                <ChatSpaceSection key={space.name} space={space} />
-              ))}
+              <div className={styles.scrollArea}>
+                {unreadItems.chat.slice(0, chatLimit).map((space) => (
+                  <ChatSpaceSection key={space.name} space={space} />
+                ))}
+              </div>
               {chatLimit < unreadItems.chat.length && (
                 <button className={styles.showMore} onClick={() => setChatLimit((p) => p + LOAD_MORE_COUNT)}>
                   さらに表示
