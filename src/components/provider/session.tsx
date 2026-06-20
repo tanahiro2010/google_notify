@@ -16,6 +16,7 @@ const SessionProvider = () => {
     const storedToken = localStorage.getItem("access_token");
     if (storedToken) {
       setToken(storedToken);
+      setIsLoggedIn(true);
     } else {
       setIsLoggedIn(false);
     }
