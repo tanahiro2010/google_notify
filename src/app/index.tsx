@@ -8,8 +8,10 @@ import styles from "../styles/index.module.css";
 
 const IndexPage = () => {
   const classroomResult = useClassroom();
-  const latestView = null; //localStorage.getItem("latest_view");
-  const since = latestView ?? new Date(0).toISOString();
+  const latestView = localStorage.getItem("latest_view");
+  const since = latestView && !isNaN(new Date(latestView).getTime())
+    ? latestView
+    : new Date(0).toISOString();
   const chatResult = useChat(`createTime > "${since}"`);
 
   const unreadItems = useMemo(() => {
