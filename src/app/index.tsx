@@ -4,7 +4,7 @@ import { Loading } from "../components/screen/loading";
 import { ClassroomCard } from "../components/unread/classroom-card";
 import styles from "../styles/index.module.css";
 
-const TEST_MODE = true; // false にすると期間フィルタが有効に
+const TEST_MODE = false; // false にすると期間フィルタが有効に
 const INITIAL_DISPLAY_COUNT = 7;
 const LOAD_MORE_COUNT = 10;
 
