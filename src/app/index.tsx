@@ -47,8 +47,15 @@ const IndexPage = () => {
     );
   }
 
-  const profileRaw = sessionStorage.getItem("profile");
-  const profile = profileRaw ? JSON.parse(profileRaw) as Record<string, unknown> : null;
+  const profile = useMemo(() => {
+    try {
+      const profileRaw = sessionStorage.getItem("profile");
+      if (!profileRaw) return null;
+      return JSON.parse(profileRaw);
+    } catch {
+      return null;
+    }
+  }, [sessionStorage]);
   const userName = typeof profile?.name === "string" ? profile.name : null;
 
   const unreadTotal = unreadItems.length;
