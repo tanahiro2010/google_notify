@@ -53,6 +53,12 @@ jobs:
       - name: Install frontend dependencies
         run: bun install # pnpm yarn bun 等を使用している場合は書き換えてください
 
+      # .env を GitHub Secrets から生成（cargo build 時に env!() マクロで埋め込まれる）
+      - name: Create .env file from secrets
+        run: |
+          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" > .env
+          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
+
       # Tauri公式のビルド・リリースActionを実行
       - name: Build and Release Tauri App
         uses: tauri-apps/tauri-action@fce9c6108b31ea247710505d3aaaa893ee6768d4 # v0
