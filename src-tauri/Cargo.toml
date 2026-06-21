@@ -33,6 +33,7 @@ tokio = { version = "1", features = ["sync", "time", "rt", "macros"] }
 tauri-plugin-fs = "2.5.1"
 sha2 = "0.10"
 base64 = "0.22"
+auto-launch = "0.5"
 
 [dev-dependencies]
 mockito = "1"
