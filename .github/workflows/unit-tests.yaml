@@ -1,4 +1,4 @@
-name: Rust Tests
+name: Unit Tests
 
 on:
   pull_request:
@@ -6,14 +6,34 @@ on:
     types: [opened, synchronize, reopened]
 
 concurrency:
-  group: rust-tests-${{ github.head_ref || github.ref }}
+  group: unit-tests-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  ts-test:
+    name: Vitest test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - run: curl -fsSL https://bun.sh/install | bash
+
+      - run: echo "$HOME/.bun/bin" >> $GITHUB_PATH
+
+      - run: bun install
+
+      - run: bun run test:ts
+
+  rs-test:
     name: cargo test
     runs-on: ubuntu-latest
     timeout-minutes: 15
