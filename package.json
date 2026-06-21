@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run && cargo test --manifest-path src-tauri/Cargo.toml",
+    "test:ts": "vitest run",
+    "test:rs": "cargo test --manifest-path src-tauri/Cargo.toml"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
