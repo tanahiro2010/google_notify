@@ -1,6 +1,13 @@
 import type { ClassroomCourseWork } from "../../types/classroom";
+import {
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { formatDate } from "./utils";
-import styles from "../../styles/index.module.css";
 
 const dueLabel = (work: ClassroomCourseWork) => {
   if (!work.dueDate) return null;
@@ -8,25 +15,57 @@ const dueLabel = (work: ClassroomCourseWork) => {
   const t = work.dueTime;
   const date = `${d.year}/${d.month}/${d.day}`;
   const time = t ? ` ${String(t.hours).padStart(2, "0")}:${String(t.minutes).padStart(2, "0")}` : "";
-  return <span className={styles.dueLabel}>期限 {date + time}</span>;
+  return (
+    <Typography component="span" variant="caption" color="error.main">
+      期限 {date + time}
+    </Typography>
+  );
 };
 
 const ClassroomCard = ({ work }: { work: ClassroomCourseWork }) => (
-  <div className={styles.card}>
-    <div className={styles.cardBody}>
-      <p className={styles.cardTitle}>{work.title}</p>
-      <div className={styles.cardMeta}>
-        <span>更新: {formatDate(work.updateTime)}</span>
+  <Card
+    variant="outlined"
+    sx={{
+      mb: 1,
+      display: "flex",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: 2,
+      "&:hover": { borderColor: "primary.main" },
+    }}
+  >
+    <CardContent sx={{ flex: 1, minWidth: 0, py: 1.5, "&:last-child": { pb: 1.5 } }}>
+      <Typography
+        variant="body2"
+        noWrap
+        title={work.title}
+        gutterBottom
+        sx={{ fontWeight: 500 }}
+      >
+        {work.title}
+      </Typography>
+      <Stack direction="row" sx={{ flexWrap: "wrap", alignItems: "center", gap: 1 }}>
+        <Typography variant="caption" color="text.secondary">
+          更新: {formatDate(work.updateTime)}
+        </Typography>
         {dueLabel(work)}
-      </div>
-    </div>
-    <a
-      className={styles.cardLink}
-      href={work.alternateLink}
-      target="_blank"
-      rel="noopener noreferrer"
-    >開く</a>
-  </div>
+      </Stack>
+    </CardContent>
+    <CardActions sx={{ p: 1.5, pt: 1.5, flexShrink: 0 }}>
+      <Button
+        component="a"
+        href={work.alternateLink}
+        target="_blank"
+        rel="noopener noreferrer"
+        size="small"
+        variant="outlined"
+        color="inherit"
+        sx={{ minWidth: 0, color: "text.secondary" }}
+      >
+        開く
+      </Button>
+    </CardActions>
+  </Card>
 );
 
 export { ClassroomCard };
