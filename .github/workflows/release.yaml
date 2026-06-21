@@ -15,8 +15,10 @@ jobs:
         include:
           - platform: 'windows-latest' # Windows用ビルド環境
             args: ''
+            update-platforms: 'windows-x86_64'
           - platform: 'macos-latest'   # Mac用ビルド環境（必要に応じて）
-            args: ''
+            args: '--target universal-apple-darwin'
+            update-platforms: 'darwin-x86_64,darwin-aarch64'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -71,35 +73,31 @@ jobs:
           prerelease: false
           args: ${{ matrix.args }}
 
-      # バンドルを署名して .sig ファイルを生成
-      - name: Sign bundles
+      - name: Verify updater signatures
         shell: bash
         run: |
-          KEY_FILE=$(mktemp)
-          printf '%s' "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" > "$KEY_FILE"
-          find src-tauri/target/release/bundle \
-            -type f \( -name "*.msi" -o -name "*.msi.zip" -o -name "*.tar.gz" -o -name "*.dmg" -o -name "*.AppImage" \) \
-            -exec echo "Signing: {}" \; \
-            -exec bun run tauri signer sign \
-              --private-key-path "$KEY_FILE" \
-              --password "${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}" \
-              {} \;
-          rm -f "$KEY_FILE"
+          set -euo pipefail
+          sig_count=$(find src-tauri/target -type f \( -name "*.sig" -o -name "*.minisig" \) | wc -l | tr -d ' ')
+          if [ "$sig_count" = "0" ]; then
+            echo "No updater signatures were generated."
+            echo "TAURI_SIGNING_PRIVATE_KEY and bundle.createUpdaterArtifacts are required."
+            exit 1
+          fi
+          find src-tauri/target -type f \( -name "*.sig" -o -name "*.minisig" \) -print
 
-      # update.json を生成してリリースにアップロード
-      - name: Generate update.json
+      # この runner で生成された署名済み updater artifact から manifest 断片を作る
+      - name: Generate update manifest part
         shell: bash
-        run: bun run scripts/generate-update-json.mjs
+        run: bun run scripts/generate-update-json.mjs partial
         env:
           RELEASE_VERSION: ${{ github.ref_name }}
+          UPDATE_PLATFORM_KEYS: ${{ matrix.update-platforms }}
 
-      - name: Upload update.json and .sig files
-        shell: bash
-        run: |
-          gh release upload "${{ github.ref_name }}" update-*.json --clobber
-          find src-tauri/target/release/bundle -name "*.sig" -exec gh release upload "${{ github.ref_name }}" {} --clobber \;
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload update manifest part
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: update-manifest-${{ matrix.platform }}
+          path: update-manifest-part.json
 
   publish:
     needs: [publish-tauri]
@@ -110,6 +108,27 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: lts/*
+      - uses: oven-sh/setup-bun@4bc047ad259df6fc24a6c9b0f9a0cb08cf17fbe5 # v2
+        with:
+          bun-version: latest
+      - name: Download update manifest parts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: update-manifest-*
+          path: update-manifests
+      - name: Generate update.json
+        run: bun run scripts/generate-update-json.mjs merge
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+      - name: Upload update.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.ref_name }}" update.json --clobber
       - name: Publish Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
