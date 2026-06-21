@@ -25,7 +25,9 @@ jobs:
         with:
           node-version: "22"
 
-      - run: curl -fsSL https://bun.com/install | bash
+      - run: curl -fsSL https://bun.sh/install | bash
+
+      - run: echo "$HOME/.bun/bin" >> $GITHUB_PATH
 
       - run: bun install
 
