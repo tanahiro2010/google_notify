@@ -15,6 +15,13 @@ const UPDATER_ENDPOINT: &str =
 
 #[tokio::test]
 async fn updater_endpoint_reachable() {
+    if std::env::var_os("RUN_UPDATER_ENDPOINT_TEST").is_none() {
+        eprintln!(
+            "[updater_test] SKIP — set RUN_UPDATER_ENDPOINT_TEST=1 to check the published update.json"
+        );
+        return;
+    }
+
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(15))
         .user_agent("google-notify-updater-test")
