@@ -71,6 +71,23 @@ jobs:
           prerelease: false
           args: ${{ matrix.args }}
 
+      # バンドルを署名して .sig ファイルを生成
+      - name: Sign bundles
+        shell: bash
+        run: |
+          KEY_FILE=$(mktemp)
+          echo "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" > "$KEY_FILE"
+          find src-tauri/target/release/bundle \
+            -type f \( -name "*.msi.zip" -o -name "*.tar.gz" -o -name "*.dmg" \) \
+            | while read -r bundle; do
+            echo "Signing: $bundle"
+            bun run tauri signer sign \
+              --private-key "$KEY_FILE" \
+              --password "${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}" \
+              "$bundle"
+          done
+          rm -f "$KEY_FILE"
+
       # update.json を生成してリリースにアップロード
       - name: Generate update.json
         shell: bash
@@ -78,13 +95,11 @@ jobs:
         env:
           RELEASE_VERSION: ${{ github.ref_name }}
 
-      - name: Upload update.json
+      - name: Upload update.json and .sig files
         shell: bash
         run: |
-          for f in update-*.json; do
-            echo "Uploading $f"
-            gh release upload "${{ github.ref_name }}" "$f" --clobber
-          done
+          gh release upload "${{ github.ref_name }}" update-*.json --clobber
+          find src-tauri/target/release/bundle -name "*.sig" -exec gh release upload "${{ github.ref_name }}" {} --clobber \;
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
