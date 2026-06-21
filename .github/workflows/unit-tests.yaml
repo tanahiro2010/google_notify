@@ -39,6 +39,11 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
+      - name: Create .env for build
+        run: |
+          echo "GOOGLE_CLIENT_ID=ci-placeholder" >> .env
+          echo "GOOGLE_CLIENT_SECRET=ci-placeholder" >> .env
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
