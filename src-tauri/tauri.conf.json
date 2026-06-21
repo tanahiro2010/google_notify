@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "google_notify",
+  "productName": "Google Notify",
   "version": "0.1.0",
   "identifier": "com.unischool.notify.app",
   "build": {
@@ -12,13 +12,13 @@
   "app": {
     "windows": [
       {
-        "title": "google_notify",
+        "title": "Google Notify",
         "width": 800,
         "height": 600
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self'"
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' https://classroom.googleapis.com https://www.googleapis.com https://chat.googleapis.com"
     }
   },
   "bundle": {
@@ -28,6 +28,10 @@
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
+      "icons/256x256.png",
+      "icons/256x256@2x.png",
+      "icons/512x512.png",
+      "icons/512x512@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
     ]
