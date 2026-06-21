@@ -183,6 +183,132 @@ pub(crate) async fn login() -> Result<LoginResponse, String> {
     })
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use base64::{engine::general_purpose, Engine as _};
+
+    #[test]
+    fn test_generate_code_verifier_length_and_encoding() {
+        let verifier = generate_code_verifier();
+        // 48 bytes → base64url no-pad = 64 chars
+        assert_eq!(verifier.len(), 64);
+        // URL-safe base64 only: [A-Za-z0-9_-]
+        assert!(
+            verifier
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'),
+            "Verifier contains non-URL-safe chars: {verifier}"
+        );
+    }
+
+    #[test]
+    fn test_generate_code_verifier_randomness() {
+        let a = generate_code_verifier();
+        let b = generate_code_verifier();
+        assert_ne!(a, b, "Two verifiers should be distinct");
+    }
+
+    #[test]
+    fn test_compute_code_challenge_deterministic() {
+        let verifier = "test-verifier-1234567890-abcdefghijklmnop";
+        let c1 = compute_code_challenge(verifier);
+        let c2 = compute_code_challenge(verifier);
+        assert_eq!(c1, c2, "Same verifier must produce same challenge");
+    }
+
+    #[test]
+    fn test_compute_code_challenge_known_value() {
+        // Known test vector: RFC 7636 Appendix B
+        let verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
+        let expected_challenge = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM";
+        let challenge = compute_code_challenge(verifier);
+        assert_eq!(challenge, expected_challenge);
+    }
+
+    #[test]
+    fn test_compute_code_challenge_length() {
+        let verifier = generate_code_verifier();
+        let challenge = compute_code_challenge(&verifier);
+        // SHA-256 → 32 bytes → base64url no-pad = 43 chars
+        // (ceil(32*8/6) = 43, no padding)
+        assert_eq!(challenge.len(), 43);
+    }
+
+    #[test]
+    fn test_token_response_deserialization_full() {
+        let json = r#"{
+            "access_token": "ya29.a0AfH6SMA",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "refresh_token": "1//0gABCDEF",
+            "scope": "openid email profile"
+        }"#;
+        let resp: TokenResponse = serde_json::from_str(json).unwrap();
+        assert_eq!(resp.access_token, "ya29.a0AfH6SMA");
+        assert_eq!(resp.token_type, "Bearer");
+        assert_eq!(resp.expires_in, 3600);
+        assert_eq!(resp.refresh_token, Some("1//0gABCDEF".into()));
+    }
+
+    #[test]
+    fn test_token_response_deserialization_no_refresh() {
+        let json = r#"{
+            "access_token": "ya29.a0AfH6SMB",
+            "token_type": "Bearer",
+            "expires_in": 1800,
+            "scope": "email"
+        }"#;
+        let resp: TokenResponse = serde_json::from_str(json).unwrap();
+        assert_eq!(resp.access_token, "ya29.a0AfH6SMB");
+        assert_eq!(resp.expires_in, 1800);
+        assert!(resp.refresh_token.is_none());
+    }
+
+    #[test]
+    fn test_login_response_serialization() {
+        let resp = LoginResponse {
+            access_token: "ya29.test".into(),
+            refresh_token: Some("refresh123".into()),
+            expires_in: 3600,
+        };
+        let json = serde_json::to_string(&resp).unwrap();
+        assert!(json.contains("ya29.test"));
+        assert!(json.contains("refresh123"));
+        assert!(json.contains("3600"));
+    }
+
+    #[test]
+    fn test_generate_code_verifier_no_padding() {
+        let verifier = generate_code_verifier();
+        // base64url no-pad should never contain '='
+        assert!(!verifier.contains('='), "Verifier should not contain padding");
+    }
+
+    #[test]
+    fn test_different_verifiers_produce_different_challenges() {
+        let v1 = "verifier-one-abcdefghijklmnopqrstuvwx";
+        let v2 = "verifier-two-abcdefghijklmnopqrstuvwx";
+        let c1 = compute_code_challenge(v1);
+        let c2 = compute_code_challenge(v2);
+        assert_ne!(c1, c2, "Different verifiers must produce different challenges");
+    }
+
+    #[test]
+    fn test_login_response_without_refresh_token() {
+        let resp = LoginResponse {
+            access_token: "token_no_refresh".into(),
+            refresh_token: None,
+            expires_in: 1800,
+        };
+        let json = serde_json::to_string(&resp).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed["access_token"], "token_no_refresh");
+        assert_eq!(parsed["refresh_token"], serde_json::Value::Null);
+        assert_eq!(parsed["expires_in"], 1800);
+    }
+}
+
 pub(crate) async fn refresh_access_token(refresh_token: &str) -> Result<LoginResponse, String> {
     let client_id =
         std::env::var("GOOGLE_CLIENT_ID").map_err(|_| "GOOGLE_CLIENT_ID not set".to_string())?;
