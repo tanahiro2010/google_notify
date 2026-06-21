@@ -1,4 +1,4 @@
-name: Unit Tests
+name: Rust Tests
 
 on:
   pull_request:
@@ -6,31 +6,15 @@ on:
     types: [opened, synchronize, reopened]
 
 concurrency:
-  group: unit-tests-${{ github.head_ref || github.ref }}
+  group: rust-tests-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  test-typescript:
-    name: TypeScript (Vitest)
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "22"
-
-      - run: npm install
-
-      - run: npm run test:ts
-
-  test-rust:
-    name: Rust (cargo test)
+  test:
+    name: cargo test
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
