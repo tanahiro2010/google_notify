@@ -39,13 +39,11 @@ function writePartialManifest() {
 
   for (const artifact of updateArtifacts) {
     const inferredPlatforms = determinePlatforms(artifact.name);
-    if (platformHints.length > 0 && !hasMatchingOs(platformHints, inferredPlatforms)) {
-      continue;
-    }
-
     const platformKeys = platformHints.length > 0
-      ? platformHints
+      ? inferredPlatforms.filter((platform) => platformHints.includes(platform))
       : inferredPlatforms;
+
+    if (platformKeys.length === 0) continue;
 
     for (const platformKey of platformKeys) {
       const current = platforms[platformKey];
@@ -207,15 +205,6 @@ function artifactRank(artifactName = "") {
   if (/\.appimage$/i.test(artifactName)) return 20;
   if (/\.(msi|nsis)\.zip$/i.test(artifactName)) return 10;
   return 0;
-}
-
-function hasMatchingOs(a, b) {
-  const osNames = new Set(a.map(platformOs));
-  return b.some((platform) => osNames.has(platformOs(platform)));
-}
-
-function platformOs(platform) {
-  return platform.split("-")[0];
 }
 
 function validatePlatforms(platforms) {
