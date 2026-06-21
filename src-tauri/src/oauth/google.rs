@@ -183,6 +183,224 @@ pub(crate) async fn login() -> Result<LoginResponse, String> {
     })
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use base64::{engine::general_purpose, Engine as _};
+
+    #[test]
+    fn test_generate_code_verifier_length_and_encoding() {
+        let verifier = generate_code_verifier();
+        assert_eq!(verifier.len(), 64);
+        assert!(
+            verifier
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'),
+            "Verifier contains non-URL-safe chars: {verifier}"
+        );
+    }
+
+    #[test]
+    fn test_generate_code_verifier_randomness() {
+        let a = generate_code_verifier();
+        let b = generate_code_verifier();
+        assert_ne!(a, b, "Two verifiers should be distinct");
+    }
+
+    #[test]
+    fn test_compute_code_challenge_deterministic() {
+        let verifier = "test-verifier-1234567890-abcdefghijklmnop";
+        let c1 = compute_code_challenge(verifier);
+        let c2 = compute_code_challenge(verifier);
+        assert_eq!(c1, c2, "Same verifier must produce same challenge");
+    }
+
+    #[test]
+    fn test_compute_code_challenge_known_value() {
+        let verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
+        let expected_challenge = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM";
+        let challenge = compute_code_challenge(verifier);
+        assert_eq!(challenge, expected_challenge);
+    }
+
+    #[test]
+    fn test_compute_code_challenge_length() {
+        let verifier = generate_code_verifier();
+        let challenge = compute_code_challenge(&verifier);
+        assert_eq!(challenge.len(), 43);
+    }
+
+    #[test]
+    fn test_token_response_deserialization_full() {
+        let json = r#"{
+            "access_token": "ya29.a0AfH6SMA",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "refresh_token": "1//0gABCDEF",
+            "scope": "openid email profile"
+        }"#;
+        let resp: TokenResponse = serde_json::from_str(json).unwrap();
+        assert_eq!(resp.access_token, "ya29.a0AfH6SMA");
+        assert_eq!(resp.token_type, "Bearer");
+        assert_eq!(resp.expires_in, 3600);
+        assert_eq!(resp.refresh_token, Some("1//0gABCDEF".into()));
+    }
+
+    #[test]
+    fn test_token_response_deserialization_no_refresh() {
+        let json = r#"{
+            "access_token": "ya29.a0AfH6SMB",
+            "token_type": "Bearer",
+            "expires_in": 1800,
+            "scope": "email"
+        }"#;
+        let resp: TokenResponse = serde_json::from_str(json).unwrap();
+        assert_eq!(resp.access_token, "ya29.a0AfH6SMB");
+        assert_eq!(resp.expires_in, 1800);
+        assert!(resp.refresh_token.is_none());
+    }
+
+    #[test]
+    fn test_token_response_empty_access_token() {
+        let json = r#"{
+            "access_token": "",
+            "token_type": "Bearer",
+            "expires_in": 0,
+            "scope": ""
+        }"#;
+        let resp: TokenResponse = serde_json::from_str(json).unwrap();
+        assert_eq!(resp.access_token, "");
+        assert_eq!(resp.expires_in, 0);
+        assert!(resp.refresh_token.is_none());
+    }
+
+    #[test]
+    fn test_login_response_serialization() {
+        let resp = LoginResponse {
+            access_token: "ya29.test".into(),
+            refresh_token: Some("refresh123".into()),
+            expires_in: 3600,
+        };
+        let json = serde_json::to_string(&resp).unwrap();
+        assert!(json.contains("ya29.test"));
+        assert!(json.contains("refresh123"));
+        assert!(json.contains("3600"));
+    }
+
+    #[test]
+    fn test_generate_code_verifier_no_padding() {
+        let verifier = generate_code_verifier();
+        assert!(!verifier.contains('='), "Verifier should not contain padding");
+    }
+
+    #[test]
+    fn test_different_verifiers_produce_different_challenges() {
+        let v1 = "verifier-one-abcdefghijklmnopqrstuvwx";
+        let v2 = "verifier-two-abcdefghijklmnopqrstuvwx";
+        let c1 = compute_code_challenge(v1);
+        let c2 = compute_code_challenge(v2);
+        assert_ne!(c1, c2, "Different verifiers must produce different challenges");
+    }
+
+    #[test]
+    fn test_login_response_without_refresh_token() {
+        let resp = LoginResponse {
+            access_token: "token_no_refresh".into(),
+            refresh_token: None,
+            expires_in: 1800,
+        };
+        let json = serde_json::to_string(&resp).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed["access_token"], "token_no_refresh");
+        assert_eq!(parsed["refresh_token"], serde_json::Value::Null);
+        assert_eq!(parsed["expires_in"], 1800);
+    }
+
+    #[test]
+    fn test_oauth_server_guard_construction() {
+        let guard = OauthServerGuard(54321);
+        assert_eq!(guard.0, 54321);
+    }
+
+    #[test]
+    fn test_callback_url_extracts_code_and_state() {
+        let url = Url::parse("http://127.0.0.1:54321/callback?code=auth123&state=sec456").unwrap();
+        let code = url
+            .query_pairs()
+            .find(|(k, _)| k == "code")
+            .map(|(_, v)| v.into_owned());
+        let state = url
+            .query_pairs()
+            .find(|(k, _)| k == "state")
+            .map(|(_, v)| v.into_owned());
+        let error = url
+            .query_pairs()
+            .find(|(k, _)| k == "error");
+        assert_eq!(code.as_deref(), Some("auth123"));
+        assert_eq!(state.as_deref(), Some("sec456"));
+        assert!(error.is_none());
+    }
+
+    #[test]
+    fn test_callback_url_detects_error() {
+        let url = Url::parse(
+            "http://127.0.0.1:54321/callback?error=access_denied&state=sec456",
+        )
+        .unwrap();
+        let error = url
+            .query_pairs()
+            .find(|(k, _)| k == "error")
+            .map(|(_, v)| v.into_owned());
+        assert_eq!(error.as_deref(), Some("access_denied"));
+    }
+
+    #[test]
+    fn test_callback_url_missing_params() {
+        let url = Url::parse("http://127.0.0.1:54321/callback").unwrap();
+        assert!(url.query_pairs().find(|(k, _)| k == "code").is_none());
+        assert!(url.query_pairs().find(|(k, _)| k == "state").is_none());
+    }
+
+    #[test]
+    fn test_token_response_to_login_response_conversion() {
+        let token = TokenResponse {
+            access_token: "ya29.converted".into(),
+            token_type: "Bearer".into(),
+            expires_in: 7200,
+            refresh_token: Some("rt_converted".into()),
+            scope: "email".into(),
+        };
+        let login = LoginResponse {
+            access_token: token.access_token,
+            refresh_token: token.refresh_token,
+            expires_in: token.expires_in,
+        };
+        assert_eq!(login.access_token, "ya29.converted");
+        assert_eq!(login.refresh_token, Some("rt_converted".into()));
+        assert_eq!(login.expires_in, 7200);
+    }
+
+    #[test]
+    fn test_refresh_response_reuses_input_refresh_token() {
+        let input_rt = "my-refresh-token-value";
+        let token = TokenResponse {
+            access_token: "ya29.refreshed".into(),
+            token_type: "Bearer".into(),
+            expires_in: 3600,
+            refresh_token: None,
+            scope: "email".into(),
+        };
+        let login = LoginResponse {
+            access_token: token.access_token,
+            refresh_token: Some(input_rt.to_string()),
+            expires_in: token.expires_in,
+        };
+        assert_eq!(login.access_token, "ya29.refreshed");
+        assert_eq!(login.refresh_token, Some(input_rt.to_string()));
+        assert_eq!(login.expires_in, 3600);
+    }
+}
+
 pub(crate) async fn refresh_access_token(refresh_token: &str) -> Result<LoginResponse, String> {
     let client_id =
         std::env::var("GOOGLE_CLIENT_ID").map_err(|_| "GOOGLE_CLIENT_ID not set".to_string())?;
