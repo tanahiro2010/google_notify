@@ -120,15 +120,15 @@ jobs:
         with:
           pattern: update-manifest-*
           path: update-manifests
-      - name: Generate update.json
+      - name: Generate latest.json
         run: bun run scripts/generate-update-json.mjs merge
         env:
           RELEASE_VERSION: ${{ github.ref_name }}
-      - name: Upload update.json
+      - name: Upload latest.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${{ github.ref_name }}" update.json --clobber
+          gh release upload "${{ github.ref_name }}" latest.json --clobber
       - name: Publish Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
