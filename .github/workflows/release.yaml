@@ -44,8 +44,14 @@ jobs:
           workspaces: './src-tauri -> target'
 
       # フロントエンドの依存関係インストール
+      - name: Install bun
+        run: curl -fsSL https://bun.sh/install | bash
+    
+      - name: Add bun to PATH
+        run: echo "$HOME/.bun/bin" >> $GITHUB_PATH
+
       - name: Install frontend dependencies
-        run: npm install # pnpm yarn bun 等を使用している場合は書き換えてください
+        run: bun install # pnpm yarn bun 等を使用している場合は書き換えてください
 
       # Tauri公式のビルド・リリースActionを実行
       - name: Build and Release Tauri App
