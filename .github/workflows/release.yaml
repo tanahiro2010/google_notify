@@ -46,6 +46,9 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Install frontend dependencies
+        run: bun install
+
       # .env を GitHub Secrets から生成（cargo build 時に env!() マクロで埋め込まれる）
       - name: Create .env file from secrets
         run: |
