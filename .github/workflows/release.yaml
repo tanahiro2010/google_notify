@@ -46,9 +46,6 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Install frontend dependencies
-        run: bun install
-
       # .env を GitHub Secrets から生成（cargo build 時に env!() マクロで埋め込まれる）
       - name: Create .env file from secrets
         run: |
@@ -76,12 +73,12 @@ jobs:
         shell: bash
         run: |
           KEY_FILE=$(mktemp)
-          echo "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" > "$KEY_FILE"
+          printf '%s' "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" > "$KEY_FILE"
           find src-tauri/target/release/bundle \
             -type f \( -name "*.msi" -o -name "*.msi.zip" -o -name "*.tar.gz" -o -name "*.dmg" -o -name "*.AppImage" \) \
             -exec echo "Signing: {}" \; \
             -exec bun run tauri signer sign \
-              --private-key "$KEY_FILE" \
+              --private-key-path "$KEY_FILE" \
               --password "${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}" \
               {} \;
           rm -f "$KEY_FILE"
