@@ -2,8 +2,8 @@ use std::time::Duration;
 
 /// アプリが実際に叩く latest リリースの update manifest を検証する統合テスト。
 ///
-/// Tauri 2 の {{target}}-{{arch}} 形式（例: darwin-aarch64）でリクエストし、
-/// 必須フィールド (version, pub_date, url, signature) を検証する。
+/// Tauri 2 の静的 JSON 形式で、必須フィールド
+/// (version, platforms.[target].url, platforms.[target].signature) を検証する。
 const TARGETS: &[&str] = &[
     "darwin-aarch64",
     "darwin-x86_64",
@@ -11,53 +11,66 @@ const TARGETS: &[&str] = &[
 ];
 
 const UPDATER_ENDPOINT: &str =
-    "https://github.com/unischool-sg/google_notify/releases/download/latest/update-{target}.json";
+    "https://github.com/unischool-sg/google_notify/releases/latest/download/update.json";
 
 #[tokio::test]
 async fn updater_endpoint_reachable() {
+    if std::env::var_os("RUN_UPDATER_ENDPOINT_TEST").is_none() {
+        eprintln!(
+            "[updater_test] SKIP — set RUN_UPDATER_ENDPOINT_TEST=1 to check the published update.json"
+        );
+        return;
+    }
+
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(15))
         .user_agent("google-notify-updater-test")
         .build()
         .expect("Failed to create HTTP client");
 
-    let mut found_any = false;
+    eprintln!("[updater_test] GET {UPDATER_ENDPOINT}");
+
+    let resp = client
+        .get(UPDATER_ENDPOINT)
+        .send()
+        .await
+        .unwrap_or_else(|e| panic!("Failed to reach updater endpoint: {e}"));
+
+    let status = resp.status();
+    eprintln!("[updater_test]   HTTP {status}");
+    assert!(
+        status.is_success(),
+        "update.json must be published to the latest GitHub release"
+    );
+
+    let body = resp.text().await.expect("Failed to read response body");
+    let json: serde_json::Value = serde_json::from_str(&body).expect("Response is not valid JSON");
+
+    assert!(json.get("version").is_some(), "Missing 'version' field");
+    assert!(json.get("pub_date").is_some(), "Missing 'pub_date' field");
+
+    let platforms = json
+        .get("platforms")
+        .and_then(|value| value.as_object())
+        .expect("Missing 'platforms' object");
 
     for target in TARGETS {
-        let url = UPDATER_ENDPOINT.replace("{target}", target);
+        let platform = platforms
+            .get(*target)
+            .unwrap_or_else(|| panic!("Missing platform '{target}'"));
 
-        eprintln!("[updater_test] GET {url}");
-
-        let resp = client
-            .get(&url)
-            .send()
-            .await
-            .unwrap_or_else(|e| panic!("Failed to reach {target} endpoint: {e}"));
-
-        let status = resp.status();
-        eprintln!("[updater_test]   HTTP {status}");
-
-        if !status.is_success() {
-            eprintln!(
-                "[updater_test]   SKIP — manifest not found for {target} (expected until next release with new naming)"
-            );
-            continue;
-        }
-
-        found_any = true;
-        let body = resp.text().await.expect("Failed to read response body");
-        let json: serde_json::Value =
-            serde_json::from_str(&body).expect("Response is not valid JSON");
-        assert!(json.get("version").is_some(), "Missing 'version' field for {target}");
-        assert!(json.get("pub_date").is_some(), "Missing 'pub_date' field for {target}");
-        assert!(json.get("url").is_some(), "Missing 'url' field for {target}");
-        assert!(json.get("signature").is_some(), "Missing 'signature' field for {target}");
-        eprintln!("[updater_test]   OK — version={}", json["version"]);
+        assert!(
+            platform.get("url").and_then(|value| value.as_str()).is_some(),
+            "Missing platforms.{target}.url"
+        );
+        assert!(
+            platform
+                .get("signature")
+                .and_then(|value| value.as_str())
+                .is_some(),
+            "Missing platforms.{target}.signature"
+        );
     }
 
-    assert!(
-        found_any,
-        "No update manifests found at latest release. \
-         Publish a release with update-{{target}}-{{arch}}.json naming (e.g. update-darwin-aarch64.json)."
-    );
+    eprintln!("[updater_test]   OK — version={}", json["version"]);
 }
