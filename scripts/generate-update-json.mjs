@@ -40,10 +40,8 @@ function writePartialManifest() {
   for (const artifact of updateArtifacts) {
     const inferredPlatforms = determinePlatforms(artifact.name);
     const platformKeys = platformHints.length > 0
-      ? inferredPlatforms.filter((platform) => platformHints.includes(platform))
+      ? platformHints
       : inferredPlatforms;
-
-    if (platformKeys.length === 0) continue;
 
     for (const platformKey of platformKeys) {
       const current = platforms[platformKey];
