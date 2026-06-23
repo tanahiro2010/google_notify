@@ -15,6 +15,7 @@ const useClassroom = (token: string | null) => {
     const fetchClassroomWorks = async () => {
     if (!token && !hasFetched) return;
 
+    setError(null);
       const client = new GoogleAPIClient(token);
       
       try {
