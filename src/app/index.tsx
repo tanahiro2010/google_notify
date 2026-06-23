@@ -56,6 +56,15 @@ const IndexPage = () => {
       return null;
     }
   }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      classroomResult.setHasFetched(false);
+    }, 10 * 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
   const userName = typeof profile?.name === "string" ? profile.name : null;
   if (classroomResult.loading) return <Loading isFullscreen={false} />;
   if (classroomResult.error) {

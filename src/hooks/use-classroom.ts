@@ -9,11 +9,13 @@ const useClassroom = (token: string | null) => {
   const [error, setError] = useState<Error | null>(
     () => token ? null : new Error("アクセストークンが見つかりません")
   );
+  const [hasFetched, setHasFetched] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchClassroomWorks = async () => {
-      if (!token) return;
+    if (!token && !hasFetched) return;
 
+    setError(null);
       const client = new GoogleAPIClient(token);
       
       try {
@@ -27,13 +29,14 @@ const useClassroom = (token: string | null) => {
         setError(err as Error);
       } finally {
         setLoading(false);
+        setHasFetched(true);
       }
     }
 
     fetchClassroomWorks();
-  }, [token]);
+  }, [token, hasFetched]);
 
-  return { classroomWorks, loading, error } as const;
+  return { classroomWorks, loading, error, setHasFetched } as const;
 }
 
 export { useClassroom };
