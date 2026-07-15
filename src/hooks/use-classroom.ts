@@ -12,6 +12,7 @@ const useClassroom = (token: string | null) => {
   const [hasFetched, setHasFetched] = useState<boolean>(false);
 
   useEffect(() => {
+    console.log("useClassroom effect triggered with token:", token, "hasFetched:", hasFetched);
     const fetchClassroomWorks = async () => {
       if (!token || hasFetched) return;
 
@@ -20,7 +21,8 @@ const useClassroom = (token: string | null) => {
 
       try {
         const courses = await client.fetchCourses();
-        const works = await Promise.all(courses.map(async (course) => {
+        const updatedCourses = courses.sort((a, b) => new Date(b.updateTime).getTime() - new Date(a.updateTime).getTime());
+        const works = await Promise.all(updatedCourses.map(async (course) => {
           const courseWorks = await client.fetchCourseWorks(course.id);
           return courseWorks;
         }));
