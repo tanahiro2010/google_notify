@@ -26,8 +26,14 @@ const useClassroom = (token: string | null) => {
         const courses = await client.fetchCourses();
         const items = await Promise.all(courses.map(async (course) => {
           const [courseWorks, announcements] = await Promise.all([
-            client.fetchCourseWorks(course.id),
-            client.fetchAnnouncements(course.id),
+            client.fetchCourseWorks(course.id).catch((err) => {
+              console.error(`Course works fetch error for ${course.id}:`, err);
+              return [];
+            }),
+            client.fetchAnnouncements(course.id).catch((err) => {
+              console.error(`Announcements fetch error for ${course.id}:`, err);
+              return [];
+            }),
           ]);
           const normalizedWorks: ClassroomFeedItem[] = courseWorks.map((work) => ({
             id: work.id,
