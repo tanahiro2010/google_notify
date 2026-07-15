@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { GoogleAPIClient } from '../lib/google';
 
 const announcementTitle = (text: string) => {
-  const firstLine = text.trim().split("\n")[0]?.trim();
+  const firstLine = text?.trim().split("\n")[0]?.trim();
   return firstLine || "お知らせ";
 };
 
