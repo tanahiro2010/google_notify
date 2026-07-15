@@ -2,21 +2,20 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ThemeProvider } from "@mui/material";
 import { ClassroomCard } from "../../components/unread/classroom-card";
-import type { ClassroomCourseWork } from "../../types/classroom";
+import type { ClassroomFeedItem } from "../../types/classroom";
 import { theme } from "../../theme";
 
-const baseWork: ClassroomCourseWork = {
+const baseWork: ClassroomFeedItem = {
   courseId: "c1",
   id: "w1",
+  kind: "courseWork",
   title: "Test Assignment",
-  state: "PUBLISHED",
   alternateLink: "https://classroom.google.com/c/test",
   creationTime: "2026-06-20T10:00:00Z",
   updateTime: "2026-06-21T12:00:00Z",
-  workType: "ASSIGNMENT",
 };
 
-const renderClassroomCard = (work: ClassroomCourseWork) =>
+const renderClassroomCard = (work: ClassroomFeedItem) =>
   render(
     <ThemeProvider theme={theme}>
       <ClassroomCard work={work} />
@@ -44,7 +43,7 @@ describe("ClassroomCard", () => {
   });
 
   it("shows due date when present", () => {
-    const work: ClassroomCourseWork = {
+    const work: ClassroomFeedItem = {
       ...baseWork,
       dueDate: { year: 2026, month: 7, day: 1 },
       dueTime: { hours: 23, minutes: 59 },
@@ -60,7 +59,7 @@ describe("ClassroomCard", () => {
   });
 
   it("shows due date without time when dueTime is absent", () => {
-    const work: ClassroomCourseWork = {
+    const work: ClassroomFeedItem = {
       ...baseWork,
       dueDate: { year: 2026, month: 12, day: 25 },
     };

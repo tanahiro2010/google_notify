@@ -56,3 +56,16 @@ export interface ListAnnouncementsResponse {
   announcements?: ClassroomAnnouncement[];
   nextPageToken?: string;
 }
+
+// courseWork と announcement をまとめて一覧表示するための正規化済みアイテム
+export interface ClassroomFeedItem {
+  id: string;
+  courseId: string;
+  kind: "courseWork" | "announcement";
+  title: string;
+  alternateLink: string;
+  creationTime: string;
+  updateTime: string;
+  dueDate?: { year: number; month: number; day: number };
+  dueTime?: { hours: number; minutes: number; seconds?: number };
+}

@@ -1,4 +1,4 @@
-import type { ClassroomCourseWork } from "../../types/classroom";
+import type { ClassroomFeedItem } from "../../types/classroom";
 import {
   Button,
   Card,
@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import { formatDate } from "./utils";
 
-const dueLabel = (work: ClassroomCourseWork) => {
+const dueLabel = (work: ClassroomFeedItem) => {
   if (!work.dueDate) return null;
   const d = work.dueDate;
   const t = work.dueTime;
@@ -22,7 +22,7 @@ const dueLabel = (work: ClassroomCourseWork) => {
   );
 };
 
-const ClassroomCard = ({ work }: { work: ClassroomCourseWork }) => (
+const ClassroomCard = ({ work }: { work: ClassroomFeedItem }) => (
   <Card
     variant="outlined"
     sx={{

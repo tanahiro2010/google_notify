@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { ListCoursesResponse, ListCourseWorkResponse } from "../types/classroom";
+import type { ListCoursesResponse, ListCourseWorkResponse, ListAnnouncementsResponse } from "../types/classroom";
 import type { ListSpacesResponse, ListMessagesResponse } from "../types/chat";
 import type { LoginResponse } from "../types/auth";
 
@@ -82,6 +82,18 @@ class GoogleAPIClient {
 
     const data: ListCourseWorkResponse = await res.json();
     return data.courseWork ?? [];
+  }
+
+  async fetchAnnouncements(courseId: string) {
+    const url = new URL(`https://classroom.googleapis.com/v1/courses/${courseId}/announcements`);
+    url.searchParams.append("orderBy", "updateTime desc");
+    url.searchParams.append("pageSize", "20");
+
+    const res = await this.fetch(url.toString());
+    if (!res.ok) throw new Error(`Failed to fetch announcements: ${res.status} ${res.statusText}`);
+
+    const data: ListAnnouncementsResponse = await res.json();
+    return data.announcements ?? [];
   }
 
   // Google Chat API

@@ -1,10 +1,14 @@
-import type { ClassroomCourseWork } from "../types/classroom";
+import type { ClassroomFeedItem } from "../types/classroom";
 import { useState, useEffect } from 'react';
 import { GoogleAPIClient } from '../lib/google';
 
+const announcementTitle = (text: string) => {
+  const firstLine = text.trim().split("\n")[0]?.trim();
+  return firstLine || "お知らせ";
+};
 
 const useClassroom = (token: string | null) => {
-  const [classroomWorks, setClassroomWorks] = useState<Array<ClassroomCourseWork>>([]);
+  const [classroomWorks, setClassroomWorks] = useState<Array<ClassroomFeedItem>>([]);
   const [loading, setLoading] = useState(() => !token);
   const [error, setError] = useState<Error | null>(
     () => token ? null : new Error("アクセストークンが見つかりません")
@@ -12,7 +16,6 @@ const useClassroom = (token: string | null) => {
   const [hasFetched, setHasFetched] = useState<boolean>(false);
 
   useEffect(() => {
-    console.log("useClassroom effect triggered with token:", token, "hasFetched:", hasFetched);
     const fetchClassroomWorks = async () => {
       if (!token || hasFetched) return;
 
@@ -21,12 +24,37 @@ const useClassroom = (token: string | null) => {
 
       try {
         const courses = await client.fetchCourses();
-        const updatedCourses = courses.sort((a, b) => new Date(b.updateTime).getTime() - new Date(a.updateTime).getTime());
-        const works = await Promise.all(updatedCourses.map(async (course) => {
-          const courseWorks = await client.fetchCourseWorks(course.id);
-          return courseWorks;
+        const items = await Promise.all(courses.map(async (course) => {
+          const [courseWorks, announcements] = await Promise.all([
+            client.fetchCourseWorks(course.id),
+            client.fetchAnnouncements(course.id),
+          ]);
+          const normalizedWorks: ClassroomFeedItem[] = courseWorks.map((work) => ({
+            id: work.id,
+            courseId: work.courseId,
+            kind: "courseWork",
+            title: work.title,
+            alternateLink: work.alternateLink,
+            creationTime: work.creationTime,
+            updateTime: work.updateTime,
+            dueDate: work.dueDate,
+            dueTime: work.dueTime,
+          }));
+          const normalizedAnnouncements: ClassroomFeedItem[] = announcements.map((announcement) => ({
+            id: announcement.id,
+            courseId: announcement.courseId,
+            kind: "announcement",
+            title: announcementTitle(announcement.text),
+            alternateLink: announcement.alternateLink,
+            creationTime: announcement.creationTime,
+            updateTime: announcement.updateTime,
+          }));
+          return [...normalizedWorks, ...normalizedAnnouncements];
         }));
-        setClassroomWorks(works.flat());
+        const sortedItems = items.flat().sort(
+          (a, b) => new Date(b.updateTime).getTime() - new Date(a.updateTime).getTime()
+        );
+        setClassroomWorks(sortedItems);
       } catch (err) {
         setError(err as Error);
       } finally {

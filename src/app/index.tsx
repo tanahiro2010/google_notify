@@ -15,7 +15,7 @@ import { useClassroom } from "../hooks/use-classroom";
 import { Loading } from "../components/screen/loading";
 import { ClassroomCard } from "../components/unread/classroom-card";
 
-const TEST_MODE = true; // テスト時のみ true を注入する
+const TEST_MODE = false; // テスト時のみ true を注入する
 const INITIAL_DISPLAY_COUNT = 7;
 const LOAD_MORE_COUNT = 10;
 
@@ -38,7 +38,9 @@ const IndexPage = () => {
   const [appVersion, setAppVersion] = useState("");
   useEffect(() => {
     getVersion().then(setAppVersion).catch(() => setAppVersion("0.1.0"));
-    console.log("classroomResult", classroomResult);
+  }, []);
+
+  useEffect(() => {
     const timer = setInterval(() => {
       classroomResult.setHasFetched(false);
     }, 10 * 1000);
